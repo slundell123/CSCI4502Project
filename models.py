@@ -20,3 +20,6 @@ class Review(Base):
     pub_weekday = Column(Integer)
     pub_month = Column(Integer)
     pub_year = Column(Integer)
+
+    def __repr__(self):
+        return f"<Review(id={self.reviewid}, title='{self.title}'), artist='{self.artist}', score={self.score}>"
