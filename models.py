@@ -1,5 +1,6 @@
+from sqlalchemy import Column, Float, ForeignKey, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, Float
+from sqlalchemy.orm import relationship
 
 Base = declarative_base()
 
@@ -23,3 +24,12 @@ class Review(Base):
 
     def __repr__(self):
         return f"<Review(id={self.reviewid}, title='{self.title}'), artist='{self.artist}', score={self.score}>"
+
+
+class Content(Base):
+    __tablename__ = "content"
+    reviewid = Column(Integer, primary_key=True)
+    content = Column(String)
+
+    def __repr__(self):
+        return f"<Content(id={self.reviewid})>"
