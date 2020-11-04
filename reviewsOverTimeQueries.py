@@ -9,6 +9,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import func
 
 from models import Review
+from models import Genre
 
 # enviornment variables setup
 load_dotenv()
@@ -36,8 +37,27 @@ if __name__ == "__main__":
         .all()
     )
 
+    # Join query for Genre and Review to see reviews by genre
+    averageReviewsScoreByGenre = (
+        session.query(Genre.genre, func.avg(Review.score))
+        .filter(Genre.genre != None, Review.best_new_music == 1)
+        .join(Review, Genre.reviewid == Review.reviewid)
+        .group_by(Genre.genre)
+        .all()
+    )
+
+    # Lists of scores by genre
+    allScoresByGenre = (
+        session.query(Genre.genre, func.array_agg(Review.score))
+        .filter(Genre.genre != None)
+        .join(Review, Genre.reviewid == Review.reviewid)
+        .group_by(Genre.genre)
+        .all()
+    )
+
     # Graphing score averages
-    fig, (ax1, ax2) = plt.subplots(1, 2)
+    fig1, (ax1, ax2) = plt.subplots(1, 2)
+    fig2, (ax3, ax4) = plt.subplots(1, 2)
 
     averageScores = sorted(averageScores, key=lambda x: (-x[1], x[0]))
     scores = [i[0] for i in averageScores]
@@ -57,8 +77,30 @@ if __name__ == "__main__":
     ax2.set_ylabel("Average Score")
     ax2.set_xlabel("Year")
 
-    fig.set_size_inches(15, 5, forward=True)
+    genreScores = [i[1] for i in averageReviewsScoreByGenre]
+    genre = [i[0] for i in averageReviewsScoreByGenre]
+    ax3.plot(genre, genreScores, "o")
+    ax3.set_xticks(genre)
+    ax3.set_title("Average Best New Music Score by Genre")
+    ax3.set_ylabel("Average Score")
+    ax3.set_xlabel("Genre")
+    round_genreScores = [round(num, 3) for num in genreScores]
+    for xy in zip(genre, round_genreScores):
+        ax3.annotate("(%s, %s)" % xy, xy=xy, textcoords="data", rotation=-5)
+
+    allGenreScores = [i[1] for i in allScoresByGenre]
+    genreName = [i[0] for i in allScoresByGenre]
+    ax4.boxplot(allGenreScores)
+    ax4.set_xticklabels(genreName)
+    ax4.set_title("Scores by Genre")
+    ax4.set_ylabel("Score")
+    ax4.set_xlabel("Genre")
+
+    fig1.set_size_inches(15, 5, forward=True)
+    fig2.set_size_inches(15, 5, forward=True)
     plt.setp(ax1.xaxis.get_majorticklabels(), rotation=45)
     plt.setp(ax2.xaxis.get_majorticklabels(), rotation=45)
+    plt.setp(ax3.xaxis.get_majorticklabels(), rotation=45)
+    plt.setp(ax4.xaxis.get_majorticklabels(), rotation=45)
 
     plt.show()
