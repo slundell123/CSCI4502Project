@@ -130,7 +130,7 @@ if __name__ == "__main__":
     sample_size = 10
     classifier = get_classifier()
 
-    positive_reviewids = [x.reviewid for x in session.query(Review).filter(Review.score < 5).all()]
+    positive_reviewids = [x.reviewid for x in session.query(Review).filter(Review.score >= 5).all()]
     correct = 0
     accuracy_list = []
     for ii in range(100):
