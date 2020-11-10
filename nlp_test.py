@@ -68,14 +68,14 @@ def get_classifier():
         x.reviewid for x in session.query(Review).filter(Review.score >= 5).order_by(Review.score.desc()).all()
     ]
     positive_reviews = []
-    for id in random.sample(positive_reviewids, 50):
+    for id in random.sample(positive_reviewids, 100):
         positive_reviews.append(session.query(Content).filter(Content.reviewid == id).first().content)
 
     negative_reviewids = [
         x.reviewid for x in session.query(Review).filter(Review.score < 5).order_by(Review.score).all()
     ]
     negative_reviews = []
-    for id in random.sample(negative_reviewids, 50):
+    for id in random.sample(negative_reviewids, 100):
         negative_reviews.append(session.query(Content).filter(Content.reviewid == id).first().content)
 
     # positive_tokens = twitter_samples.tokenized("positive_tweets.json")
