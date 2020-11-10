@@ -23,3 +23,12 @@ class Review(Base):
 
     def __repr__(self):
         return f"<Review(id={self.reviewid}, title='{self.title}'), artist='{self.artist}', score={self.score}>"
+        # return f"{self.score}"
+class Genre(Base):
+    __tablename__ = "genres"
+    reviewid = Column(Integer, primary_key=True)
+    genre = Column(String)
+
+    def __repr__(self):
+        return f"<Genre(id={self.reviewid}, genre='{self.genre}')>"
+        # return f"{self.score}"

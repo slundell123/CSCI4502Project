@@ -1,5 +1,8 @@
 import logging
 import os
+import numpy as np
+import matplotlib.pyplot as plt
+import json
 
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
@@ -21,6 +24,4 @@ if __name__ == "__main__":
     engine = create_engine(PSQL_CONNECTION_STRING, echo=False)
     Session = sessionmaker(bind=engine)
     session = Session()
-
-    # example query to print out top ten results from best new music category
-    print(session.query(Review).filter(Review.best_new_music == 1).limit(10).all())
+    print(session.query(Review).filter(Review.artist == "jeff buckley").limit(1).all())
