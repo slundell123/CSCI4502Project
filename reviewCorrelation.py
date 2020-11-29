@@ -11,6 +11,16 @@ from sqlalchemy.sql import func
 from models import Review
 from models import Genre
 
+
+def getCorrelationCoef(setA, setB, numTests):
+    corrCoef = 0
+    for i in range(numTests):
+        bestMusic = np.random.choice(setA, size=len(setB))
+        corrCoef += np.corrcoef(bestMusic, setB)[0][1]
+    print(corrCoef)
+    return corrCoef / numTests
+
+
 # enviornment variables setup
 load_dotenv()
 PSQL_CONNECTION_STRING = os.getenv("PSQL_CONNECTION_STRING")
@@ -29,10 +39,16 @@ if __name__ == "__main__":
     # query get average score of ratings for each year
     averageScores = session.query(func.avg(Review.score), Review.pub_year).group_by(Review.pub_year).all()
 
-    # query get average score of ratings for each year
+    # query get best new music scores are scores for somgs that weren't best new music
     bestNewMusicScores = session.query(Review.score).filter(Review.best_new_music == 1).all()
     bestNewMusicOrNotScores = (
         session.query(Review.best_new_music, func.array_agg(Review.score)).group_by(Review.best_new_music).all()
+    )
+    bestNewMusicByYear = (
+        session.query(Review.pub_year, func.array_agg(Review.score))
+        .group_by(Review.pub_year)
+        .filter(Review.best_new_music == 1)
+        .all()
     )
     # Join query for Genre and Review to see reviews by genre
     averageReviewsScoreByGenre = (
@@ -52,11 +68,30 @@ if __name__ == "__main__":
         .all()
     )
 
+    # Lists of scores by year
+    allScoresByYear = session.query(Review.pub_year, func.array_agg(Review.score)).group_by(Review.pub_year).all()
+
     for i in allScoresByGenre:
-        bestMusic = np.random.choice(i[1], size=len(bestNewMusicOrNotScores[1][1]))
         print("Genre: ", i[0])
-        corrCoef = np.corrcoef(bestMusic, bestNewMusicOrNotScores[1][1])
-        print("Correlation coef, best new music: ", corrCoef[0][1])
-        notBestMusic = np.random.choice(i[1], size=len(bestNewMusicOrNotScores[1][1]))
-        corrCoefNotBest = np.corrcoef(notBestMusic, bestNewMusicOrNotScores[1][1])
-        print("Correlation coef, not best new music: ", corrCoefNotBest[0][1])
+        print("bestNewMusicScores vs ", i[0], ": ", getCorrelationCoef(i[1], bestNewMusicOrNotScores[1][1], 1000))
+        print("NotBestNewMusic vs ", i[0], ": ", getCorrelationCoef(i[1], bestNewMusicOrNotScores[0][1], 1000))
+        print("---")
+"""
+    for i in allScoresByYear:
+        scoresForYear = []
+        for j in bestNewMusicByYear:
+            if j[0] == i[0]:
+                scoresForYear = j
+        if scoresForYear == []:
+            continue
+        print("Year: ", i[0])
+        print(
+            "bestNewMusicScores in ",
+            scoresForYear[0],
+            " vs ",
+            i[0],
+            " scores: ",
+            getCorrelationCoef(i[1], scoresForYear[1], 1000),
+        )
+        print("---")
+    """
