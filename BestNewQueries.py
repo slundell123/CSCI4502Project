@@ -132,6 +132,24 @@ def genre():
     )
     print(metalBNM)
 
+def author():
+    averageContributor = (
+        session.query(func.avg(Review.score), Review.author_type)
+        .filter(Review.author_type != None)
+        .group_by(Review.author_type)
+        .all()
+    )
+    averageContributor = sorted(averageContributor, key=lambda x: (x[1], -x[0]))
+    scores = [i[0] for i in averageContributor]
+    author = [i[1] for i in averageContributor]
+    author_pos = [i for i, _ in enumerate(author)]
+    plt.bar(author_pos, scores, color='green')
+    plt.xlabel("Author Type")
+    plt.ylabel("Average Score")
+    plt.title("Average Scores by Author Type")
+    plt.xticks(author_pos, author, size=6)
+    plt.show()
+
 
 
 if __name__ == "__main__":
@@ -141,4 +159,5 @@ if __name__ == "__main__":
 
     # bestNewPlot()
     # notBestNewPlot()
-    genre()
+    # genre()
+    author()
