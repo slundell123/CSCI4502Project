@@ -17,7 +17,6 @@ def getCorrelationCoef(setA, setB, numTests):
     for i in range(numTests):
         bestMusic = np.random.choice(setA, size=len(setB))
         corrCoef += np.corrcoef(bestMusic, setB)[0][1]
-    print(corrCoef)
     return corrCoef / numTests
 
 
@@ -71,12 +70,27 @@ if __name__ == "__main__":
     # Lists of scores by year
     allScoresByYear = session.query(Review.pub_year, func.array_agg(Review.score)).group_by(Review.pub_year).all()
 
+    # query get average score of ratings for each author type
+    averageScoresByAuthorType = (
+        session.query(Review.author_type, func.array_agg(Review.score))
+        .group_by(Review.author_type)
+        .filter(Review.author_type != None)
+        .all()
+    )
+    for i in averageScoresByAuthorType:
+        print("Author Type: ", i[0])
+        print("bestNewMusicScores vs ", i[0], ": ", getCorrelationCoef(i[1], bestNewMusicOrNotScores[1][1], 1000))
+        print("NotBestNewMusic vs ", i[0], ": ", getCorrelationCoef(i[1], bestNewMusicOrNotScores[0][1], 1000))
+        print("---")
+"""
     for i in allScoresByGenre:
         print("Genre: ", i[0])
         print("bestNewMusicScores vs ", i[0], ": ", getCorrelationCoef(i[1], bestNewMusicOrNotScores[1][1], 1000))
         print("NotBestNewMusic vs ", i[0], ": ", getCorrelationCoef(i[1], bestNewMusicOrNotScores[0][1], 1000))
         print("---")
-"""
+
+
+
     for i in allScoresByYear:
         scoresForYear = []
         for j in bestNewMusicByYear:
