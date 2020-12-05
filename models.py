@@ -30,6 +30,7 @@ class Content(Base):
     __tablename__ = "content"
     reviewid = Column(Integer, primary_key=True)
     content = Column(String)
+    sentiment = Column(Integer)  # 0 = negative, 1 = positive
 
     def __repr__(self):
         return f"<Content(id={self.reviewid})>"

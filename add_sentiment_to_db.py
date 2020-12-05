@@ -8,6 +8,7 @@ from nltk.corpus import stopwords, twitter_samples
 from nltk.stem.wordnet import WordNetLemmatizer
 from nltk.tag import pos_tag
 from nltk.tokenize import word_tokenize
+from sqlalchemy.orm.exc import StaleDataError
 
 from models import Content, Review
 from queries import get_session
@@ -127,23 +128,35 @@ def sentiment(classifier, text):
 
 
 if __name__ == "__main__":
-    sample_size = 10
+    sample_size = 100
     classifier = get_classifier()
 
-    positive_reviewids = [x.reviewid for x in session.query(Review).filter(Review.score >= 5).all()]
-    correct = 0
-    accuracy_list = []
-    for ii in range(100):
-        test_ids = random.sample(positive_reviewids, sample_size)
-        positive_reviews = []
-        for id in test_ids:
-            positive_reviews.append(session.query(Content).filter(Content.reviewid == id).first().content)
-        for review in positive_reviews:
-            if len(review) > 0:
-                if sentiment(classifier, review) == "Positive":
-                    correct += 1
-        print(f"accuracy: {correct}/{sample_size}")
-        accuracy_list.append(correct)
-        correct = 0
+    # positive_reviewids = [x.reviewid for x in session.query(Review).filter(Review.score >= 5).all()]
+    # correct = 0
+    # accuracy_list = []
 
-    print(f"###### AVG ######\n{sum(accuracy_list)/len(accuracy_list)}/{sample_size}")
+    # test_ids = random.sample(positive_reviewids, sample_size)
+    # positive_reviews = []
+    # for id in test_ids:
+    #     positive_reviews.append(session.query(Content).filter(Content.reviewid == id).first().content)
+    # for review in positive_reviews:
+    #     if len(review) > 0:
+    #         if sentiment(classifier, review) == "Positve":
+    #             correct += 1
+    # print(f"accuracy: {correct}/{sample_size}")
+    # accuracy_list.append(correct)
+
+    # print(f"###### AVG ######\n{sum(accuracy_list)/len(accuracy_list)}/{sample_size}")
+
+    all_content = session.query(Content).filter(Content.sentiment == None).all()
+    for x in all_content:
+        if sentiment(classifier, x.content) == "Positive":
+            x.sentiment = 1
+        else:
+            x.sentiment = 0
+        try:
+            session.commit()
+        except StaleDataError:
+            # sometimes this fails due to db inconsistency
+            session.rollback()
+            pass

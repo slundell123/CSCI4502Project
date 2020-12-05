@@ -1,11 +1,15 @@
 import logging
+import math
 import os
+from functools import reduce
 
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.sql.expression import func
 
-from models import Review
+from models import Content, Review
+from nlp_binary import get_classifier, sentiment
 
 # enviornment variables setup
 load_dotenv()
@@ -16,6 +20,22 @@ handler.setLevel(logging.INFO)
 logger = logging.getLogger("sqlalchemy")
 logger.addHandler(handler)
 logger.setLevel(logging.DEBUG)
+
+
+def info(nums):
+    nsum = sum(nums)
+    results = []
+    for x in nums:
+        results.append(-x / nsum * math.log(x / nsum) / math.log(2) if x != 0 else 0)
+    return sum(results)
+
+
+def infoOld(x, y):
+    nsum = x + y
+    x_expr = -x / nsum * math.log(x / nsum) / math.log(2) if x != 0 else 0
+    y_expr = -y / nsum * math.log(y / nsum) / math.log(2) if y != 0 else 0
+    return x_expr + y_expr
+
 
 """
 Prediction Plan
@@ -36,6 +56,7 @@ What factors am I looking at?
 How to make decision?
     - instead of trying to predict the numeric score precisely, place into range classes
         - 0-2, 2-4, 4-6, 6-8, 8-10
+        - 0-3, 4-7, 8-10
     - do a gain analysis on each of the categories
     - classify based on decision tree constructed from the gain analysis
 
@@ -45,6 +66,99 @@ if __name__ == "__main__":
     engine = create_engine(PSQL_CONNECTION_STRING, echo=False)
     Session = sessionmaker(bind=engine)
     session = Session()
+    # classifier = get_classifier()
 
-    # example query to print out top ten results from best new music category
-    print(session.query(Review).filter(Review.best_new_music == 1).limit(10).all())
+    # get total information
+    bad_reviews = session.query(Review).filter(Review.score <= 3)
+    bad_reviews_content = (
+        session.query(Content).join(Review, Review.reviewid == Content.reviewid).filter(Review.score <= 3)
+    )
+    mid_reviews = session.query(Review).filter(Review.score > 3, Review.score <= 7)
+    mid_reviews_content = (
+        session.query(Content)
+        .join(Review, Review.reviewid == Content.reviewid)
+        .filter(Review.score > 3, Review.score <= 7)
+    )
+    good_reviews = session.query(Review).filter(Review.score > 7)
+    good_reviews_content = (
+        session.query(Content).join(Review, Review.reviewid == Content.reviewid).filter(Review.score > 7)
+    )
+    all_reviews = session.query(Review)
+    total_information = info([bad_reviews.count(), mid_reviews.count(), good_reviews.count()])
+
+    # get gain for best new music
+    bnm_information = info(
+        [
+            bad_reviews.filter(Review.best_new_music == 1).count(),
+            mid_reviews.filter(Review.best_new_music == 1).count(),
+            good_reviews.filter(Review.best_new_music == 1).count(),
+        ]
+    )
+    bnm_information = (
+        bad_reviews.count()
+        / all_reviews.count()
+        * info(
+            [
+                bad_reviews.filter(Review.best_new_music == 1).count(),
+                bad_reviews.filter(Review.best_new_music == 0).count(),
+            ]
+        )
+        + mid_reviews.count()
+        / all_reviews.count()
+        * info(
+            [
+                mid_reviews.filter(Review.best_new_music == 1).count(),
+                mid_reviews.filter(Review.best_new_music == 0).count(),
+            ]
+        )
+        + good_reviews.count()
+        / all_reviews.count()
+        * info(
+            [
+                good_reviews.filter(Review.best_new_music == 1).count(),
+                good_reviews.filter(Review.best_new_music == 0).count(),
+            ]
+        )
+    )
+
+    bnm_gain = total_information - bnm_information
+    # get gain for review length?
+    review_length_information = (
+        bad_reviews.count()
+        / all_reviews.count()
+        * info(
+            [
+                bad_reviews_content.filter(func.length(Content.content) <= 3000).count(),  # short
+                bad_reviews_content.filter(func.length(Content.content) > 3000).count(),  # long
+            ]
+        )
+        + mid_reviews.count()
+        / all_reviews.count()
+        * info(
+            [
+                mid_reviews_content.filter(func.length(Content.content) <= 3000).count(),  # short
+                mid_reviews_content.filter(func.length(Content.content) > 3000).count(),  # long
+            ]
+        )
+        + good_reviews.count()
+        / all_reviews.count()
+        * info(
+            [
+                good_reviews_content.filter(func.length(Content.content) <= 3000).count(),  # short
+                good_reviews_content.filter(func.length(Content.content) > 3000).count(),  # long
+            ]
+        )
+    )
+    length_gain = total_information - review_length_information
+
+    # get gain for classifier (this may be too computationally expensive to be helpful)
+    # bad_reviews_ids = [x.reviewid for x in good_reviews.all()]
+    # bad_reviews_classified_positive = reduce(
+    #     lambda _sum, elem: _sum + 1 if elem == "Positive" else _sum,
+    #     [
+    #         sentiment(classifier, session.query(Content).filter(Content.reviewid == id).first().content)
+    #         for id in bad_reviews_ids
+    #     ],
+    #     0,
+    # )
+    # print(bad_reviews_classified_positive)
