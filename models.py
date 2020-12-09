@@ -1,5 +1,6 @@
+from sqlalchemy import Column, Float, ForeignKey, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, Float
+from sqlalchemy.orm import relationship
 
 Base = declarative_base()
 
@@ -32,3 +33,13 @@ class Genre(Base):
 
     def __repr__(self):
         return f"<Genre(id={self.reviewid}, genre='{self.genre}')"
+
+
+class Content(Base):
+    __tablename__ = "content"
+    reviewid = Column(Integer, primary_key=True)
+    content = Column(String)
+    sentiment = Column(Integer)  # 0 = negative, 1 = positive
+
+    def __repr__(self):
+        return f"<Content(id={self.reviewid})>"
