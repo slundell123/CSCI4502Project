@@ -1,7 +1,6 @@
 import logging
 import math
 import os
-from functools import reduce
 
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
@@ -9,7 +8,6 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql.expression import func
 
 from models import Content, Review
-from nlp_binary import get_classifier, sentiment
 
 # enviornment variables setup
 load_dotenv()
