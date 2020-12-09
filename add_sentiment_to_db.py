@@ -17,6 +17,10 @@ from queries import get_session
 This code has been based on
 https://www.digitalocean.com/community/tutorials/how-to-perform-sentiment-analysis-in-python-3-using-the-natural-language-toolkit-nltk
 
+In this file, I classify each reviews sentiment as "Positive" or "Negative" using a Naive Bayes Classifier
+I then commit this sentiment to the db as it only needs to be calculated once and then can just be used
+This file does this, it takes a while and this significantly helps myself out for later on
+
 """
 
 # get db session
@@ -130,23 +134,6 @@ def sentiment(classifier, text):
 if __name__ == "__main__":
     sample_size = 100
     classifier = get_classifier()
-
-    # positive_reviewids = [x.reviewid for x in session.query(Review).filter(Review.score >= 5).all()]
-    # correct = 0
-    # accuracy_list = []
-
-    # test_ids = random.sample(positive_reviewids, sample_size)
-    # positive_reviews = []
-    # for id in test_ids:
-    #     positive_reviews.append(session.query(Content).filter(Content.reviewid == id).first().content)
-    # for review in positive_reviews:
-    #     if len(review) > 0:
-    #         if sentiment(classifier, review) == "Positve":
-    #             correct += 1
-    # print(f"accuracy: {correct}/{sample_size}")
-    # accuracy_list.append(correct)
-
-    # print(f"###### AVG ######\n{sum(accuracy_list)/len(accuracy_list)}/{sample_size}")
 
     all_content = session.query(Content).filter(Content.sentiment == None).all()
     for x in all_content:

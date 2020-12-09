@@ -151,14 +151,42 @@ if __name__ == "__main__":
     )
     length_gain = total_information - review_length_information
 
-    # get gain for classifier (this may be too computationally expensive to be helpful)
-    # bad_reviews_ids = [x.reviewid for x in good_reviews.all()]
-    # bad_reviews_classified_positive = reduce(
-    #     lambda _sum, elem: _sum + 1 if elem == "Positive" else _sum,
-    #     [
-    #         sentiment(classifier, session.query(Content).filter(Content.reviewid == id).first().content)
-    #         for id in bad_reviews_ids
-    #     ],
-    #     0,
-    # )
-    # print(bad_reviews_classified_positive)
+    # get gain for sentiment
+    sentiment_information = (
+        bad_reviews.count()
+        / all_reviews.count()
+        * info(
+            [
+                bad_reviews_content.filter(Content.sentiment == 1).count(),  # positive
+                bad_reviews_content.filter(Content.sentiment != 1).count(),  # negative
+            ]
+        )
+        + mid_reviews.count()
+        / all_reviews.count()
+        * info(
+            [
+                mid_reviews_content.filter(Content.sentiment == 1).count(),  # positive
+                mid_reviews_content.filter(Content.sentiment != 1).count(),  # negative
+            ]
+        )
+        + good_reviews.count()
+        / all_reviews.count()
+        * info(
+            [
+                good_reviews_content.filter(Content.sentiment == 1).count(),  # positive
+                good_reviews_content.filter(Content.sentiment != 1).count(),  # negative
+            ]
+        )
+    )
+    sentiment_gain = total_information - sentiment_information
+
+    print(f"bnm_gain: {bnm_gain}, length_gain: {length_gain}, sentiment_gain: {sentiment_gain}")
+    """
+    Final #'s
+    Best New Music Gain: 0.8349388729057268
+    Length of Review Gain: 0.3579853202455314
+    Sentiment Gain: 0.3767884869740059
+
+    So, for decision tree, first branch on BNM, then the sentiment, then the length of review
+
+    """
