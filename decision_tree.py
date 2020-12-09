@@ -78,12 +78,34 @@ def classify(bnm, sentiment, length):
         return "Good (8-10)"
 
 
-# grab a random review and attempt to classify it
+def test_classifier(reviews, testing=False, correct=0):
+    # grab a random review and attempt to classify it
+    test_content = random.choice(reviews)
+    test_review = session.query(Review).filter(Review.reviewid == test_content.reviewid).first()
+    print(f"Classifying album '{test_review.title}' by '{test_review.artist}'...")
+    bnm = test_review.best_new_music
+    sentiment = test_content.sentiment
+    length = len(test_content.content)
+    result = classify(bnm, sentiment, length)
+    print(f"Classified as: {result}\nActually: {test_review.score}")
+
+    if testing:
+        assert type(correct) == int
+        if result == "Bad (0-3)" and test_review.score <= 3:
+            correct += 1
+        elif result == "Mid (4-7)" and test_review.score > 3 and test_review.score <= 7:
+            correct += 1
+        elif result == "Good (8-10)" and test_review.score > 7:
+            correct += 1
+        return correct
+
+
+TEST_RUNS = 100
+correct = 0
 reviews = [x for x in session.query(Content).all()]
-test_content = random.choice(reviews)
-test_review = session.query(Review).filter(Review.reviewid == test_content.reviewid).first()
-print(f"Classifying album {test_review.title} by {test_review.artist}...")
-bnm = test_review.best_new_music
-sentiment = test_content.sentiment
-length = len(test_content.content)
-print(f"Classified as: {classify(bnm, sentiment, length)}\nActually: {test_review.score}")
+for ii in range(TEST_RUNS):
+    correct = test_classifier(reviews, testing=True, correct=correct)
+
+accuracy = correct / TEST_RUNS
+
+print(f"Ran {TEST_RUNS} iterations with accuracy {accuracy}")
