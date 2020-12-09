@@ -3,8 +3,8 @@ import re
 import string
 
 import nltk
-from nltk import FreqDist, NaiveBayesClassifier, classify
-from nltk.corpus import stopwords, twitter_samples
+from nltk import NaiveBayesClassifier
+from nltk.corpus import stopwords
 from nltk.stem.wordnet import WordNetLemmatizer
 from nltk.tag import pos_tag
 from nltk.tokenize import word_tokenize
