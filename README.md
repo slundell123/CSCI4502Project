@@ -42,3 +42,5 @@ python queries.py
 `requirements.txt` contains a list of the python packages neccessary to interact with our database\
 `.vscode/` contains editor settings. While you're not required to use vscode, these settings will keep our formatting consistent\
 `.env` contains environment variables neccessary to connect to the database. NOTE: this is .gitignore'd, and you'll have to add this file yourself. This is becuase we do not want our database information stored on github. PLEASE PLEASE be careful with this and do not commit my connection info to github :)
+
+All other files are seperate work done by our group while mining our data.
